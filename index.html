@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a1a">
+    <meta name="description" content="VortexEye - AI-powered indoor and outdoor navigation">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+
+    <title>VortexEye 🌀👁️</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🌀👁️</span>
+                <span class="logo-text">VortexEye</span>
+            </div>
+            <div class="header-actions">
+                <button id="voiceBtn" class="icon-btn" title="Voice Input">🎤</button>
+                <button id="settingsBtn" class="icon-btn" title="Settings">⚙️</button>
+            </div>
+        </header>
+
+        <!-- Session Timer (Pilot Testing) -->
+        <div class="session-timer" id="sessionTimer">
+            <span class="timer-icon">⏱️</span>
+            <span class="timer-text" id="timerDisplay">5:00</span>
+            <div class="timer-bar">
+                <div class="timer-progress" id="timerProgress"></div>
+            </div>
+        </div>
+
+        <!-- Mode Indicator -->
+        <div class="mode-indicator" id="modeIndicator">
+            <span class="mode-icon" id="modeIcon">📍</span>
+            <span class="mode-text" id="modeText">Detecting location...</span>
+        </div>
+
+        <!-- Main View Container -->
+        <main class="main-view" id="mainView">
+            <!-- Map View (Outdoor Mode) -->
+            <div class="view-container" id="mapView">
+                <div id="map" class="map-canvas"></div>
+                <div class="map-overlay" id="mapOverlay">
+                    <!-- Offline indicator -->
+                    <div class="offline-badge hidden" id="offlineBadge">
+                        <span>📴 Offline Mode</span>
+                    </div>
+
+                    <!-- Direction card (shown during navigation) -->
+                    <div class="direction-card" id="directionCard" style="display: none;">
+                        <span class="direction-icon" id="directionIcon">➡️</span>
+                        <span class="direction-text" id="directionText">Turn right in 50m</span>
+                    </div>
+
+                    <!-- Route Preview Card (shown after route found, before navigation starts) -->
+                    <div class="route-preview hidden" id="routePreview">
+                        <div class="route-preview-header">
+                            <span class="route-destination" id="routeDestination">📍 Destination</span>
+                        </div>
+                        <div class="route-preview-details">
+                            <span class="route-distance" id="routeDistance">0 km</span>
+                            <span class="route-separator">•</span>
+                            <span class="route-duration" id="routeDuration">0 min</span>
+                        </div>
+                        <div class="route-preview-actions">
+                            <button id="cancelRouteBtn" class="route-btn cancel">✕ Cancel</button>
+                            <button id="startNavBtn" class="route-btn start">▶️ Start Navigation</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Camera View (Indoor Mode) - Split Screen Layout -->
+            <div class="view-container hidden" id="cameraView">
+                <div class="indoor-split-container" id="indoorSplitContainer">
+                    <!-- Camera Half -->
+                    <div class="indoor-camera-half">
+                        <video id="cameraFeed" autoplay playsinline muted></video>
+                        <canvas id="detectionCanvas"></canvas>
+                        <div class="detection-overlay" id="detectionOverlay">
+                            <div class="scan-line"></div>
+                        </div>
+                    </div>
+
+                    <!-- Map Half -->
+                    <div class="indoor-map-half">
+                        <div id="indoorMiniMap" class="indoor-mini-map"></div>
+                    </div>
+                </div>
+
+                <!-- Indoor Direction Card (top center, like outdoor mode) -->
+                <div class="indoor-direction-card" id="indoorDirectionCard">
+                    <span class="direction-icon" id="indoorDirectionIcon">📸</span>
+                    <span class="direction-text" id="indoorDirectionText">Point camera to scan for objects</span>
+                </div>
+            </div>
+        </main>
+
+        <!-- Status Panel -->
+        <div class="status-panel" id="statusPanel">
+            <div class="status-item">
+                <span class="status-label">🎯 Target:</span>
+                <span class="status-value" id="targetStatus">None</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">👟 Steps:</span>
+                <span class="status-value" id="stepCount">0</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">🧭 Heading:</span>
+                <span class="status-value" id="userHeading">N/A</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">📍 Status:</span>
+                <span class="status-value" id="navStatus">Ready</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">📡 Source:</span>
+                <span class="status-value" id="positionSource">Detecting...</span>
+            </div>
+        </div>
+
+        <!-- Search/Input Bar -->
+        <div class="search-container">
+            <!-- Start Location (collapsible) -->
+            <div class="start-location-wrapper" id="startLocationWrapper">
+                <div class="start-location-bar">
+                    <span class="start-icon">📍</span>
+                    <input type="text" id="startInput" placeholder="Current Location (tap to change)"
+                        autocomplete="off">
+                    <button id="clearStartBtn" class="clear-btn" title="Use Current Location">✕</button>
+                </div>
+            </div>
+
+            <div class="search-bar">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="destinationInput" placeholder="Where would you like to go?" autocomplete="off">
+                <button id="micBtn" class="mic-btn" title="Speak">🎙️</button>
+                <button id="goBtn" class="go-btn" title="Navigate">➡️</button>
+            </div>
+            <div class="quick-actions">
+                <button class="quick-btn" data-target="exit">🚪 Exit</button>
+                <button class="quick-btn" data-target="elevator">🛗 Elevator</button>
+                <button class="quick-btn" data-target="stairs">🪜 Stairs</button>
+                <button class="quick-btn" data-target="restroom">🚻 Restroom</button>
+            </div>
+
+            <!-- Autocomplete suggestions -->
+            <div class="suggestions-dropdown hidden" id="suggestionsDropdown"></div>
+        </div>
+
+        <!-- Session Expired Overlay -->
+        <div class="overlay hidden" id="expiredOverlay">
+            <div class="overlay-content">
+                <div class="overlay-icon">⏰</div>
+                <h2>Pilot Session Expired</h2>
+                <p>Thank you for testing VortexEye!</p>
+                <button id="restartBtn" class="primary-btn">🔄 Start New Session</button>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div class="overlay" id="loadingOverlay">
+            <div class="overlay-content">
+                <div class="loader"></div>
+                <p id="loadingText">Initializing VortexEye...</p>
+            </div>
+        </div>
+        <!-- Settings Overlay -->
+        <div class="overlay hidden" id="settingsOverlay">
+            <div class="overlay-content settings-content">
+                <button id="closeSettingsBtn" class="close-overlay-btn" title="Close">✕</button>
+                <h2>⚙️ Settings</h2>
+                
+                <div class="settings-group">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3>🔊 Voice Audio</h3>
+                            <p>Enable spoken turn-by-turn directions and guidance</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="audioToggle" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-actions">
+                    <button id="aboutBtn" class="secondary-btn">ℹ️ About VortexEye</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- About Overlay -->
+        <div class="overlay hidden" id="aboutOverlay">
+            <div class="overlay-content about-content">
+                <button id="closeAboutBtn" class="close-overlay-btn" title="Close">✕</button>
+                <h2>🌀👁️ About VortexEye</h2>
+                <div class="about-details">
+                    <p class="version">Version 1.1.0</p>
+                    <p class="description">AI-powered indoor and outdoor navigation system designed for accessibility.</p>
+                    
+                    <h3>Features</h3>
+                    <ul>
+                        <li>Outdoor GPS Navigation</li>
+                        <li>Indoor Visual Positioning</li>
+                        <li>Voice-activated Destination Routing</li>
+                        <li>Real-time Obstacle Detection</li>
+                        <li>Automatic POI Scanning</li>
+                    </ul>
+
+                    <div class="authors">
+                        <p>Developed to demonstrate Agentic AI Coding and Sensor Fusion capabilities.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/logger.js"></script>
+    <script src="js/location-service.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/indoor-vision.js"></script>
+    <script src="js/voice-interface.js"></script>
+    <script src="js/step-counter.js"></script>
+    <script src="js/building-configs.js"></script>
+    <script src="js/indoor-positioning.js"></script>
+    <script src="js/bluetooth-service.js"></script>
+    <script src="js/debug-panel.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>
