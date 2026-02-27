@@ -2,11 +2,14 @@
     "name": "VortexEye",
     "short_name": "VortexEye",
     "description": "AI-powered indoor and outdoor navigation",
+    "id": "/",
     "start_url": "/",
+    "scope": "/",
     "display": "standalone",
     "background_color": "#0a0a1a",
     "theme_color": "#6366f1",
     "orientation": "portrait",
+    "prefer_related_applications": false,
     "icons": [
         {
             "src": "assets/icons/icon-192.png",
@@ -26,5 +29,14 @@
         "utilities"
     ],
     "lang": "en",
-    "dir": "ltr"
+    "dir": "ltr",
+    "shortcuts": [
+        {
+            "name": "Navigate",
+            "short_name": "Navigate",
+            "description": "Start navigation",
+            "url": "/",
+            "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }]
+        }
+    ]
 }
